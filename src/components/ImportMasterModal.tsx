@@ -4,6 +4,8 @@ import { X, Upload, Download, FileText } from 'lucide-react';
 export default function ImportMasterModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -62,6 +64,39 @@ export default function ImportMasterModal({ isOpen, onClose }: { isOpen: boolean
     if (e.target.files && e.target.files.length > 0) {
       setSelectedFile(e.target.files[0]);
     }
+  };
+
+  const handleUpload = () => {
+    if (!selectedFile) {
+      alert("Silakan pilih file terlebih dahulu");
+      return;
+    }
+
+    setIsUploading(true);
+
+    // Simulate reading the file and uploading to Supabase
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const text = e.target?.result as string;
+      
+      // Simulate network request to Supabase
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      console.log('--- DATA MOCK KE SUPABASE ---');
+      console.log('Filename:', selectedFile.name);
+      console.log('Content:', text);
+      console.log('--- END DATA MOCK ---');
+      
+      setUploadSuccess(true);
+      setIsUploading(false);
+      
+      setTimeout(() => {
+        setUploadSuccess(false);
+        setSelectedFile(null);
+        onClose();
+      }, 3000);
+    };
+    reader.readAsText(selectedFile);
   };
 
   return (
@@ -153,9 +188,23 @@ export default function ImportMasterModal({ isOpen, onClose }: { isOpen: boolean
             )}
           </div>
 
+          {uploadSuccess && (
+            <div className="bg-emerald-50 text-emerald-600 p-4 rounded-xl border border-emerald-200 text-center font-medium">
+              File {selectedFile?.name} berhasil diproses dan disimpan ke Supabase!
+            </div>
+          )}
+
           <div className="flex justify-end pt-2">
-            <button className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-purple-600/20 transition-all flex items-center gap-2 focus:outline-none active:scale-95">
-              Upload Database
+            <button 
+              onClick={handleUpload}
+              disabled={isUploading || !selectedFile || uploadSuccess}
+              className={`font-bold py-3.5 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2 focus:outline-none active:scale-95 ${
+                isUploading || !selectedFile || uploadSuccess
+                  ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
+                  : 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/20'
+              }`}
+            >
+              {isUploading ? 'Memproses...' : uploadSuccess ? 'Berhasil' : 'Upload Database'}
             </button>
           </div>
         </div>
