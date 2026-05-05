@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5)) brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(99, 102, 241, 0.8)) brightness(1.05);
+    transform: scale(1.02);
+  }
+}
+
+.logo-shine-container {
+  position: relative;
+}
+
+.logo-shine-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 150%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.7), transparent);
+  transform: skewX(-25deg);
+  animation: shine-sweep 4s infinite;
+  z-index: 10;
+  pointer-events: none;
+}
+
+@keyframes shine-sweep {
+  0% { left: -150%; }
+  20% { left: 150%; }
+  100% { left: 150%; }
+}

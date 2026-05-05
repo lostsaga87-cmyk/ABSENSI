@@ -1,0 +1,6 @@
+{
+  "name": "Sistem Manajemen Sekolah App",
+  "description": "Aplikasi untuk mencatat absensi, pelanggaran, nilai, dan data siswa dengan interface User dan Administrator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
