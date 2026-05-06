@@ -19,6 +19,7 @@ import Geofencing from './pages/Geofencing';
 import Profile from './pages/Profile';
 import MenuUser from './pages/MenuUser';
 import About from './pages/About';
+import ApiConfig from './pages/ApiConfig';
 
 export default function App() {
   return (
@@ -38,11 +39,13 @@ export default function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="menu" element={<MenuUser />} />
             <Route path="about" element={<About />} />
+            <Route path="api-config" element={<ApiConfig />} />
           </Route>
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
+
     </AppDataProvider>
   );
 }
