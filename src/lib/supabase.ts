@@ -18,7 +18,7 @@ export async function initSupabase() {
 
     supabase = createClient(supabaseUrl, supabaseAnonKey || 'dummy-key-to-prevent-crash');
   } catch (error) {
-    console.error('Failed to initialize Supabase config:', error);
+    console.error('Failed to fetch from /api/env. Falling back to import.meta.env:', error);
     // Fallbacks for dev without Express if needed
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wtubgtvhjpwmndqykeew.supabase.co';
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
