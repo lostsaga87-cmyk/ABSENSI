@@ -5,15 +5,19 @@ export interface User {
   username: string;
   role: Role;
   name: string;
+  photo_url?: string;
 }
 
 export interface Student {
   id: string;
+  user_id?: string;
+  nisn?: string;
   nis: string;
   name: string;
-  gradeClass: string;
-  gender: 'L' | 'P';
-  phone: string;
+  class_name: string;
+  gender?: 'L' | 'P';
+  birth_date?: string;
+  created_at?: string;
 }
 
 export type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';

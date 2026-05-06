@@ -4,15 +4,29 @@ import { Users, AlertTriangle, CalendarCheck, GraduationCap, MapPin, UserPlus, C
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
 import ImportMasterModal from '../components/ImportMasterModal';
+import { supabase } from '../lib/supabase';
+import Jadwal from './Jadwal';
 
 export default function Dashboard() {
   const { students, violations, currentUser } = useAppData();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isJadwalOpen, setIsJadwalOpen] = useState(false);
+  const [totalStudents, setTotalStudents] = useState<number>(0);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000); // update every minute
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalStudents = async () => {
+      const { count } = await supabase
+        .from('students')
+        .select('*', { count: 'exact', head: true });
+      if (count !== null) setTotalStudents(count);
+    };
+    fetchTotalStudents();
   }, []);
 
   type Shortcut = {
@@ -28,7 +42,7 @@ export default function Dashboard() {
     { title: 'Mapping Ekskul', sub: 'Aktivitas', icon: Target, color: 'bg-fuchsia-600 text-white', path: '/ekskul' },
     { title: 'Import Master', sub: 'Database CSV', icon: Database, color: 'bg-rose-500 text-white', onClick: () => setIsImportModalOpen(true) },
     { title: 'Input Manual', sub: 'Input Massal CSV', icon: Keyboard, color: 'bg-purple-600 text-white', path: '/input-manual' },
-    { title: 'Jadwal Pelajaran', sub: 'Setup Jadwal', icon: Calendar, color: 'bg-fuchsia-500 text-white', path: '/jadwal' },
+    { title: 'Jadwal Pelajaran', sub: 'Setup Jadwal', icon: Calendar, color: 'bg-fuchsia-500 text-white', onClick: () => setIsJadwalOpen(true) },
     { title: 'Manajemen User', sub: 'Akun Guru', icon: UserCog, color: 'bg-emerald-500 text-white', path: '/teachers' }, 
     { title: 'Data Murid', sub: 'Siswa & Mutasi', icon: GraduationCap, color: 'bg-blue-500 text-white', path: '/students' }, 
     { title: 'Pengumuman', sub: 'Info Publik', icon: Megaphone, color: 'bg-orange-500 text-white', path: '/pengumuman' },
@@ -71,7 +85,7 @@ export default function Dashboard() {
             <Users className="w-4 h-4" /> Total Siswa
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-bold text-slate-900">{students.length}</span>
+            <span className="text-4xl font-bold text-slate-900">{totalStudents}</span>
             <span className="text-xs font-bold text-emerald-500">Aktif</span>
           </div>
         </div>
@@ -238,6 +252,7 @@ export default function Dashboard() {
         </div>
       </div>
       <ImportMasterModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} />
+      {isJadwalOpen && <Jadwal onClose={() => setIsJadwalOpen(false)} />}
     </div>
   );
 }

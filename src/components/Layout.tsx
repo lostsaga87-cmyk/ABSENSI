@@ -134,8 +134,12 @@ export default function Layout() {
               "bg-slate-800 rounded-2xl flex items-center relative group transition-all",
               isSidebarExpanded ? "p-4 gap-3" : "w-12 h-12 p-0 mx-auto justify-center"
             )}>
-              <div className="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center font-bold text-sm shrink-0">
-                {currentUser.name.charAt(0)}
+              <div className="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                {currentUser.photo_url ? (
+                  <img src={currentUser.photo_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  currentUser.name.charAt(0)
+                )}
               </div>
               {isSidebarExpanded && (
                 <div className="flex flex-col flex-1 overflow-hidden">
@@ -168,8 +172,12 @@ export default function Layout() {
             )}
             {!isAdminOrMonitor && (
                <div className="flex items-center gap-2">
-                 <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center">
-                   {currentUser.name.charAt(0)}
+                 <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center overflow-hidden">
+                   {currentUser.photo_url ? (
+                     <img src={currentUser.photo_url} alt="Profile" className="w-full h-full object-cover" />
+                   ) : (
+                     currentUser.name.charAt(0)
+                   )}
                  </div>
                  <div className="flex flex-col">
                    <span className="text-sm font-bold text-slate-800">{currentUser.name}</span>

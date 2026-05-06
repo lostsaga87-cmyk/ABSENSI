@@ -1,3 +1,15 @@
+-- Drop tables and types if they already exist to prevent "already exists" errors
+DROP TABLE IF EXISTS teaching_activities CASCADE;
+DROP TABLE IF EXISTS geofencing_settings CASCADE;
+DROP TABLE IF EXISTS grades CASCADE;
+DROP TABLE IF EXISTS violations CASCADE;
+DROP TABLE IF EXISTS attendance CASCADE;
+DROP TABLE IF EXISTS tendik CASCADE;
+DROP TABLE IF EXISTS guru CASCADE;
+DROP TABLE IF EXISTS students CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TYPE IF EXISTS user_role CASCADE;
+
 -- Create custom Enum for roles
 CREATE TYPE user_role AS ENUM ('admin', 'teacher', 'tendik', 'student', 'monitor');
 
@@ -34,6 +46,7 @@ CREATE TABLE guru (
   nama_lengkap TEXT NOT NULL,
   mata_pelajaran TEXT, -- koma separated untuk guru
   wali_kelas TEXT, -- Wali Kelas (Opsional)
+  photo_url TEXT, -- Base64 atau URL foto profil
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -148,6 +161,20 @@ CREATE POLICY "Enable read access for all users" ON violations FOR SELECT USING 
 CREATE POLICY "Enable read access for all users" ON grades FOR SELECT USING (true);
 CREATE POLICY "Enable read access for all users" ON geofencing_settings FOR SELECT USING (true);
 CREATE POLICY "Enable read access for all users" ON teaching_activities FOR SELECT USING (true);
+
+-- Enable insert access for development
+CREATE POLICY "Enable insert access for all users" ON users FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable insert access for all users" ON students FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable insert access for all users" ON guru FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable insert access for all users" ON tendik FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable insert access for all users" ON attendance FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable insert access for all users" ON violations FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable insert access for all users" ON grades FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable insert access for all users" ON geofencing_settings FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable insert access for all users" ON teaching_activities FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Enable update access for all users" ON users FOR UPDATE USING (true);
+CREATE POLICY "Enable update access for all users" ON guru FOR UPDATE USING (true);
 
 -- Catatan Penting: Pada level production, hilangkan policy public "true" di atas
 -- dan gunakan otorisasi `auth.uid() = user_id` dari Supabase.

@@ -4,6 +4,7 @@ import { useAppData } from '../context/AppDataContext';
 import { Role } from '../types';
 import { User as UserIcon, Briefcase, GraduationCap, Shield, Monitor as MonitorIcon, Eye, EyeOff } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 
 const rolesData = [
   { id: 'teacher', label: 'Guru', icon: UserIcon },
@@ -23,33 +24,51 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Dummy login logic per role
+    // Dummy login logic for admin/monitor only if needed, otherwise query Supabase
     let loggedInUser = null;
 
     if (selectedRole === 'admin' && identifier === 'admin' && password === '@123') {
       loggedInUser = { id: 'u1', username: 'admin', role: 'admin', name: 'Administrator' };
-    } else if (selectedRole === 'teacher' && identifier === 'guru' && password === 'guru') {
-      loggedInUser = { id: 'u2', username: 'guru', role: 'teacher', name: 'Bapak Budi (Guru)' };
-    } else if (selectedRole === 'tendik' && identifier === 'tendik' && password === 'tendik') {
-      loggedInUser = { id: 'u3', username: 'tendik', role: 'tendik', name: 'Ibu Siti (Tendik)' };
-    } else if (selectedRole === 'student' && identifier === 'siswa' && password === 'siswa') {
-      loggedInUser = { id: 'u4', username: 'siswa', role: 'student', name: 'Andi Kusuma (Siswa)' };
     } else if (selectedRole === 'monitor' && identifier === 'monitor' && password === 'monitor') {
       loggedInUser = { id: 'u5', username: 'monitor', role: 'monitor', name: 'Tim Monitoring' };
-    } else if (selectedRole === 'teacher') {
-      // Check localStorage for mocked dynamic teachers
+    } else {
       try {
-        const savedTeachers = JSON.parse(localStorage.getItem('mockTeachers') || '[]');
-        const found = savedTeachers.find((t: any) => t.nip === identifier);
-        // Using NIP as password for simplicity of the prompt "password nip"
-        if (found && password === identifier) {
-           loggedInUser = { id: `u-dyn-${found.nip}`, username: found.nip, role: 'teacher', name: found.name };
+        const { data: user, error } = await supabase
+          .from('users')
+          .select('id, username, role, name, password_hash')
+          .eq('username', identifier)
+          .eq('role', selectedRole) // map selectedRole to database role if needed
+          .single();
+
+        if (user && user.password_hash === password) {
+          let photoUrl = undefined;
+          
+          if (user.role === 'teacher') {
+            const { data: guruData } = await supabase
+              .from('guru')
+              .select('photo_url')
+              .eq('user_id', user.id)
+              .single();
+            if (guruData && guruData.photo_url) {
+              photoUrl = guruData.photo_url;
+            }
+          }
+
+          loggedInUser = { 
+            id: user.id, 
+            username: user.username, 
+            role: user.role, 
+            name: user.name,
+            photo_url: photoUrl
+          };
         }
-      } catch(e) {}
+      } catch (err) {
+        console.error("Login error:", err);
+      }
     }
 
     if (loggedInUser) {

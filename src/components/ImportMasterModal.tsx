@@ -1,11 +1,15 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Download, FileText } from 'lucide-react';
+import { X, Upload, Download, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import Papa from 'papaparse';
+import { supabase } from '../lib/supabase';
 
 export default function ImportMasterModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importType, setImportType] = useState<'guru' | 'tendik' | 'siswa'>('guru');
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -73,30 +77,131 @@ export default function ImportMasterModal({ isOpen, onClose }: { isOpen: boolean
     }
 
     setIsUploading(true);
+    setUploadError(null);
+    setUploadSuccess(false);
 
-    // Simulate reading the file and uploading to Supabase
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const text = e.target?.result as string;
-      
-      // Simulate network request to Supabase
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log('--- DATA MOCK KE SUPABASE ---');
-      console.log('Filename:', selectedFile.name);
-      console.log('Content:', text);
-      console.log('--- END DATA MOCK ---');
-      
-      setUploadSuccess(true);
-      setIsUploading(false);
-      
-      setTimeout(() => {
-        setUploadSuccess(false);
-        setSelectedFile(null);
-        onClose();
-      }, 3000);
-    };
-    reader.readAsText(selectedFile);
+    Papa.parse(selectedFile, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          const data = results.data as any[];
+          if (data.length === 0) throw new Error("File CSV kosong.");
+
+          // Validasi header
+          const headers = Object.keys(data[0]).map(h => h.trim().toUpperCase());
+          let isValid = false;
+          
+          if (importType === 'guru' || importType === 'tendik') {
+            isValid = headers.includes('NIP') && headers.includes('NAMA LENGKAP') && headers.includes('PASSWORD');
+          } else {
+            isValid = headers.includes('NISN') && headers.includes('NIS') && headers.includes('NAMA LENGKAP') && headers.includes('PASSWORD');
+          }
+
+          if (!isValid) {
+            throw new Error(`Format header CSV tidak sesuai untuk tipe ${importType}.`);
+          }
+
+          let successCount = 0;
+
+          for (const row of data) {
+            // Trim whitespace on all keys and filter out empty
+            const cleanRow: any = {};
+            for (const key in row) {
+               cleanRow[key.trim().toUpperCase()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+            }
+
+            const password = cleanRow['PASSWORD'];
+            const name = cleanRow['NAMA LENGKAP'];
+            
+            if (importType === 'guru' || importType === 'tendik') {
+              const nip = cleanRow['NIP'];
+              if (!nip || !password || !name) continue; // Skip invalid records
+
+              // Insert to users table first
+              const { data: user, error: userError } = await supabase.from('users').insert({
+                username: nip,
+                password_hash: password, // As requested
+                role: importType === 'guru' ? 'teacher' : 'tendik',
+                name: name
+              }).select('id').single();
+
+              if (userError) throw userError;
+
+              // Insert to guru/tendik table
+              const tableData = {
+                user_id: user.id,
+                nip: nip,
+                nama_lengkap: name,
+                mata_pelajaran: cleanRow['MATA PELAJARAN'] || null,
+                wali_kelas: cleanRow['WALI KELAS(OPSIONAL)'] || null
+              };
+
+              const { error: staffError } = await supabase.from(importType).insert(tableData);
+              if (staffError) throw staffError;
+              
+              successCount++;
+            } else {
+              // Siswa
+              const nisn = cleanRow['NISN'];
+              const nis = cleanRow['NIS'];
+              const className = cleanRow['KELAS'];
+              
+              if (!nis || !password || !name) continue;
+
+              const { data: user, error: userError } = await supabase.from('users').insert({
+                username: nis,
+                password_hash: password, 
+                role: 'student',
+                name: name
+              }).select('id').single();
+
+              if (userError) throw userError;
+
+              const gender = cleanRow['JENIS KELAMIN'];
+              const validGender = (gender === 'L' || gender === 'P') ? gender : null;
+
+              const tableData = {
+                user_id: user.id,
+                nisn: nisn || null,
+                nis: nis,
+                name: name,
+                class_name: className || '-',
+                gender: validGender,
+                birth_date: cleanRow['TANGGAL LAHIR'] || null
+              };
+
+              const { error: studentError } = await supabase.from('students').insert(tableData);
+              if (studentError) throw studentError;
+
+              successCount++;
+            }
+          }
+
+          if (successCount === 0) {
+            throw new Error("Tidak ada data yang berhasil diimport. Pastikan format isian benar.");
+          }
+
+          setUploadSuccess(true);
+          setIsUploading(false);
+          
+          setTimeout(() => {
+            setUploadSuccess(false);
+            setSelectedFile(null);
+            onClose();
+          }, 3000);
+
+        } catch (error: any) {
+          console.error("Import Error:", error);
+          setUploadError(error.message || "Terjadi kesalahan saat memproses data.");
+          setIsUploading(false);
+        }
+      },
+      error: (err) => {
+        setUploadError(`Gagal membaca file: ${err.message}`);
+        setIsUploading(false);
+      }
+    });
   };
 
   return (
@@ -114,30 +219,30 @@ export default function ImportMasterModal({ isOpen, onClose }: { isOpen: boolean
         
         <div className="p-6 sm:p-8 space-y-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="border border-slate-200 rounded-2xl p-6 flex flex-col items-center gap-4 hover:border-indigo-200 hover:shadow-md transition-all">
+            <div className={`border rounded-2xl p-6 flex flex-col items-center gap-4 transition-all cursor-pointer ${importType === 'guru' ? 'border-indigo-500 bg-indigo-50/50 shadow-md ring-1 ring-indigo-500' : 'border-slate-200 hover:border-indigo-200 hover:shadow-md'}`} onClick={() => setImportType('guru')}>
               <span className="font-bold text-slate-800">Data Guru</span>
               <button 
-                onClick={() => downloadTemplate('guru')}
+                onClick={(e) => { e.stopPropagation(); downloadTemplate('guru'); }}
                 className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-5 py-2.5 rounded-full hover:bg-indigo-100 hover:text-indigo-700 transition-colors focus:outline-none"
               >
                 <Download className="w-4 h-4" /> Download Template
               </button>
             </div>
             
-            <div className="border border-slate-200 rounded-2xl p-6 flex flex-col items-center gap-4 hover:border-indigo-200 hover:shadow-md transition-all">
+            <div className={`border rounded-2xl p-6 flex flex-col items-center gap-4 transition-all cursor-pointer ${importType === 'tendik' ? 'border-indigo-500 bg-indigo-50/50 shadow-md ring-1 ring-indigo-500' : 'border-slate-200 hover:border-indigo-200 hover:shadow-md'}`} onClick={() => setImportType('tendik')}>
               <span className="font-bold text-slate-800">Data Tendik</span>
               <button 
-                onClick={() => downloadTemplate('tendik')}
+                onClick={(e) => { e.stopPropagation(); downloadTemplate('tendik'); }}
                 className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-5 py-2.5 rounded-full hover:bg-indigo-100 hover:text-indigo-700 transition-colors focus:outline-none"
               >
                 <Download className="w-4 h-4" /> Download Template
               </button>
             </div>
 
-            <div className="border border-slate-200 rounded-2xl p-6 flex flex-col items-center gap-4 hover:border-indigo-200 hover:shadow-md transition-all">
+            <div className={`border rounded-2xl p-6 flex flex-col items-center gap-4 transition-all cursor-pointer ${importType === 'siswa' ? 'border-indigo-500 bg-indigo-50/50 shadow-md ring-1 ring-indigo-500' : 'border-slate-200 hover:border-indigo-200 hover:shadow-md'}`} onClick={() => setImportType('siswa')}>
               <span className="font-bold text-slate-800">Data Siswa</span>
               <button 
-                onClick={() => downloadTemplate('siswa')}
+                onClick={(e) => { e.stopPropagation(); downloadTemplate('siswa'); }}
                 className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-5 py-2.5 rounded-full hover:bg-indigo-100 hover:text-indigo-700 transition-colors focus:outline-none"
               >
                 <Download className="w-4 h-4" /> Download Template
@@ -187,6 +292,13 @@ export default function ImportMasterModal({ isOpen, onClose }: { isOpen: boolean
               </>
             )}
           </div>
+
+          {uploadError && (
+            <div className="bg-rose-50 text-rose-600 p-4 rounded-xl border border-rose-200 text-center font-medium flex items-center justify-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              {uploadError}
+            </div>
+          )}
 
           {uploadSuccess && (
             <div className="bg-emerald-50 text-emerald-600 p-4 rounded-xl border border-emerald-200 text-center font-medium">
