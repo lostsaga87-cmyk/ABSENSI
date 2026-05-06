@@ -32,8 +32,8 @@ export default function Violations() {
 
   const filteredViolations = violations.filter(v => {
     const student = students.find(s => s.id === v.studentId);
-    return student?.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           v.category.toLowerCase().includes(searchTerm.toLowerCase());
+    return String(student?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+           String(v.category || '').toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   return (

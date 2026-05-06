@@ -40,8 +40,8 @@ export default function Grades() {
 
   const filteredGrades = grades.filter(g => {
     const student = students.find(s => s.id === g.studentId);
-    return student?.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           g.subject.toLowerCase().includes(searchTerm.toLowerCase());
+    return String(student?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+           String(g.subject || '').toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   return (

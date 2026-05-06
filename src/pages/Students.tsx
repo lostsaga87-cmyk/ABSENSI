@@ -116,9 +116,9 @@ export default function Students() {
   };
 
   let filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.nis.includes(searchTerm) ||
-    (s.nisn && s.nisn.includes(searchTerm))
+    String(s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    String(s.nis || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (s.nisn && String(s.nisn).toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (sortConfig !== null) {
