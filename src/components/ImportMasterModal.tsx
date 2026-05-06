@@ -15,13 +15,13 @@ export default function ImportMasterModal({ isOpen, onClose }: { isOpen: boolean
     let filename = '';
 
     if (type === 'guru') {
-      content = `NIP;Nama Lengkap;Mata Pelajaran (Pisahkan dengan koma jika > 1);Wali Kelas (Opsional);Password\n198xxxx;Guru A;Matematika,IPA;Kelas 5;baujeng@1\n199xxxx;Guru B;Bahasa Indonesia;;baujeng@1`;
+      content = `NIP;NAMA LENGKAP;MATA PELAJARAN;WALI KELAS(OPSIONAL);PASSWORD\n198xxxx;Guru A;Matematika,IPA;Kelas 5;baujeng@1\n199xxxx;Guru B;Bahasa Indonesia;;baujeng@1`;
       filename = 'template_guru.csv';
     } else if (type === 'tendik') {
-      content = `NIP;Nama Lengkap;Jabatan;Password\n198xxxx;Tendik A;Tata Usaha;baujeng@1\n199xxxx;Tendik B;Perpustakaan;baujeng@1`;
+      content = `NIP;NAMA LENGKAP;MATA PELAJARAN;WALI KELAS(OPSIONAL);PASSWORD\n198xxxx;Tendik A;;;baujeng@1\n199xxxx;Tendik B;;;baujeng@1`;
       filename = 'template_tendik.csv';
     } else if (type === 'siswa') {
-      content = `NISN;NIS;Nama Lengkap;Kelas;Jenis Kelamin (L/P);Tanggal Lahir (YYYY-MM-DD);Password (Default: baujeng(kelas))\n1234567890;1001;Siswa A;Kelas 1;L;2017-05-20;baujeng1\n0987654321;1002;Siswa B;Kelas 1;P;2017-08-15;baujeng1`;
+      content = `NISN;NIS;NAMA LENGKAP;KELAS;JENIS KELAMIN;TANGGAL LAHIR;PASSWORD\n1234567890;1001;Siswa A;Kelas 1;L;2017-05-20;baujeng1\n0987654321;1002;Siswa B;Kelas 1;P;2017-08-15;baujeng1`;
       filename = 'template_siswa.csv';
     }
 

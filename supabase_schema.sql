@@ -26,19 +26,29 @@ CREATE TABLE students (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 3. Teachers & Tendik Table (Tabel Guru & Tendik)
-CREATE TABLE staff (
+-- 3. Guru Table (Tabel Guru)
+CREATE TABLE guru (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Relasi ke akun login
   nip TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
-  subject TEXT, -- Bisa null untuk tendik, koma separated untuk guru
-  homeroom TEXT, -- Wali Kelas
-  type TEXT NOT NULL CHECK (type IN ('guru', 'tendik')), 
+  nama_lengkap TEXT NOT NULL,
+  mata_pelajaran TEXT, -- koma separated untuk guru
+  wali_kelas TEXT, -- Wali Kelas (Opsional)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. Attendance Table (Tabel Absensi)
+-- 4. Tendik Table (Tabel Tenaga Kependidikan)
+CREATE TABLE tendik (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Relasi ke akun login
+  nip TEXT UNIQUE NOT NULL,
+  nama_lengkap TEXT NOT NULL,
+  mata_pelajaran TEXT, -- Sesuai format CSV (meskipun biasanya kosong/berisi jabatan)
+  wali_kelas TEXT, -- Sesuai format CSV
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 5. Attendance Table (Tabel Absensi)
 CREATE TABLE attendance (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -49,7 +59,7 @@ CREATE TABLE attendance (
   recorded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 5. Violations Table (Tabel Pelanggaran)
+-- 6. Violations Table (Tabel Pelanggaran)
 CREATE TABLE violations (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   student_id UUID REFERENCES students(id) ON DELETE CASCADE,
@@ -59,11 +69,11 @@ CREATE TABLE violations (
   violation_date TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 6. Grades Table (Tabel Nilai)
+-- 7. Grades Table (Tabel Nilai)
 CREATE TABLE grades (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   student_id UUID REFERENCES students(id) ON DELETE CASCADE,
-  teacher_id UUID REFERENCES staff(id) ON DELETE SET NULL,
+  teacher_id UUID REFERENCES guru(id) ON DELETE SET NULL,
   subject TEXT NOT NULL,
   score NUMERIC(5,2) NOT NULL,
   semester TEXT NOT NULL,
@@ -71,7 +81,7 @@ CREATE TABLE grades (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 7. Geofencing Settings (Tabel Pengaturan Absensi Radius)
+-- 8. Geofencing Settings (Tabel Pengaturan Absensi Radius)
 CREATE TABLE geofencing_settings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   center_lat DOUBLE PRECISION NOT NULL,
@@ -81,10 +91,10 @@ CREATE TABLE geofencing_settings (
   updated_by UUID REFERENCES users(id) ON DELETE SET NULL
 );
 
--- 8. Realtime Teaching Activities (Tabel Kegiatan Mengajar Realtime)
+-- 9. Realtime Teaching Activities (Tabel Kegiatan Mengajar Realtime)
 CREATE TABLE teaching_activities (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  teacher_id UUID REFERENCES staff(id) ON DELETE CASCADE,
+  teacher_id UUID REFERENCES guru(id) ON DELETE CASCADE,
   subject TEXT NOT NULL,
   class_name TEXT NOT NULL,
   room TEXT NOT NULL,
@@ -120,7 +130,8 @@ VALUES ('monitor', 'monitor', 'monitor', 'Tim Monitoring');
 -- Enable Row Level Security (opsional tapi sangat disarankan)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
-ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
+ALTER TABLE guru ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tendik ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE violations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE grades ENABLE ROW LEVEL SECURITY;
@@ -130,7 +141,8 @@ ALTER TABLE teaching_activities ENABLE ROW LEVEL SECURITY;
 -- Contoh Policy (Kebijakan Akses) agar data bisa dibaca oleh Front-end secara public saat tahap develop (sesuaikan nanti dengan user authentication sebenarnya)
 CREATE POLICY "Enable read access for all users" ON users FOR SELECT USING (true);
 CREATE POLICY "Enable read access for all users" ON students FOR SELECT USING (true);
-CREATE POLICY "Enable read access for all users" ON staff FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON guru FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON tendik FOR SELECT USING (true);
 CREATE POLICY "Enable read access for all users" ON attendance FOR SELECT USING (true);
 CREATE POLICY "Enable read access for all users" ON violations FOR SELECT USING (true);
 CREATE POLICY "Enable read access for all users" ON grades FOR SELECT USING (true);
